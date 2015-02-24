@@ -1,5 +1,7 @@
 package as;
 
+import java.util.LinkedList;
+
 import javafx.scene.paint.Color;
 
 /**
@@ -45,9 +47,75 @@ public class Mandelbrot {
 	
 	public static void computeParallel(PixelPainter painter, Plane plane, CancelSupport cancel) {
 		// TODO Implement a parallel version of the mandelbrot set computation.
-		throw new RuntimeException("To be implemented!");
-	}
+		double half = plane.length / 2;
+		double reMin = plane.center.r - half;
+		double imMax = plane.center.i + half;
+		double step = plane.length / IMAGE_LENGTH;
 
+		LinkedList<Thread> threads = new LinkedList<Thread>();		
+		int numThreads = Runtime.getRuntime().availableProcessors();
+		for(int i = 0; i<numThreads; i++){
+			int stepSeq = IMAGE_LENGTH/numThreads;
+			int startSeq = stepSeq*i;
+			int endSeq = startSeq+stepSeq;
+			
+			Thread t = new Thread(new CalcPixelsRunnable(painter, half, reMin, imMax, step, startSeq, endSeq, IMAGE_LENGTH, cancel));
+			t.start();
+			threads.add(t);
+		}
+		
+		for (Thread t : threads) {
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	static class CalcPixelsRunnable implements Runnable{
+		PixelPainter painter;
+		double half, reMin, imMax, step;
+		int startSeq, stopSeq, IMGAGE_LENGTH;
+		CancelSupport cancel;
+		
+		
+		public CalcPixelsRunnable(	PixelPainter painter, 
+									double half, 
+									double reMin, 
+									double imMax, 
+									double step, 
+									int startSeq, 
+									int stopSeq,
+									int IMG_LENGTH,
+									CancelSupport cancel){
+			this.painter = painter;
+			this.half = half;
+			this.reMin = reMin;
+			this.imMax = imMax;
+			this.step = step;
+			this.startSeq = startSeq;
+			this.stopSeq = stopSeq;
+			this.cancel = cancel;
+			this.IMGAGE_LENGTH = IMG_LENGTH;
+		}
+		
+		@Override
+		public void run() {
+			for (int x = startSeq; x < stopSeq && !cancel.isCancelled(); x++) { // x-axis
+				double re = reMin + x * step; // map pixel to complex plane
+				for (int y = 0; y < IMAGE_LENGTH; y++) { // y-axis
+					double im = imMax - y * step; // map pixel to complex plane
+
+					int iterations = mandel(re, im);
+					painter.paint(x, y, getColor(iterations));
+				}
+			}
+		}
+		
+	}
+	
+	
 	/**
 	 * z_n+1 = z_n^2 + c starting with z_0 = 0
 	 * 
@@ -86,3 +154,5 @@ public class Mandelbrot {
 //		return iterations;
 //	}
 }
+
+
