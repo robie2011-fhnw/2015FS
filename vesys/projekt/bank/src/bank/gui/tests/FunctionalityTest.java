@@ -34,7 +34,8 @@ public class FunctionalityTest implements BankTest {
 		String msg = null;
 
 		// can new accounts be created?
-		if(msg == null) {
+		//if(msg == null) 
+		{
 			String nr = bank.createAccount("TestUser1");
 			if(nr != null && bank.getAccount(nr) != null) {
 				bank.closeAccount(nr);
