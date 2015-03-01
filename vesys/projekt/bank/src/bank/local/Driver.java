@@ -6,35 +6,55 @@
 package bank.local;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import bank.InactiveException;
-import bank.OverdrawException;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+
+import bank.server.datainterchange.Repository;
 
 public class Driver implements bank.BankDriver {
-	private Bank bank = null;
+	private bank.Bank bank = null;
+	private Repository repository;
+	Socket socket;
 
 	@Override
 	public void connect(String[] args) {
-		bank = new Bank();
-		System.out.println("connected...");
+		try {
+			socket = new Socket("localhost", 9999);
+			repository = new Repository(socket);
+			System.out.println("connected...");
+		} catch (IOException e) {
+		}
+		
+		bank = repository.getBank();
+		
 	}
 
 	@Override
 	public void disconnect() {
 		bank = null;
+		try {
+			new ObjectOutputStream(socket.getOutputStream()).writeObject(null);
+			socket.shutdownOutput();
+			socket.shutdownInput();
+			socket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
 		System.out.println("disconnected...");
 	}
 
 	@Override
-	public Bank getBank() {
+	public bank.Bank getBank() {
 		return bank;
 	}
 
-	static class Bank implements bank.Bank {
+	/*
+	
+	static class LocalBank implements bank.Bank {
 		private int lastAccountId = 0;
+		private Repository repository;
 		
 		private final Map<String, Account> accounts = new HashMap<>();
 
@@ -42,17 +62,15 @@ public class Driver implements bank.BankDriver {
 			return lastAccountId++;
 		}
 		
+		public LocalBank(Repository repository) {
+			this.repository = repository;
+			// TODO Auto-generated constructor stub
+		}
+		
 		@Override
-		public Set<String> getAccountNumbers() {			
-			HashSet<String> numbers = new HashSet<String>();
-			
-			for(Account account : accounts.values()){
-				if(account.isActive()){
-					numbers.add(account.getNumber());
-				}
-			}
-									
-			return numbers;
+		public Set<String> getAccountNumbers() {
+
+			return null;
 		}
 
 		@Override
@@ -148,5 +166,26 @@ public class Driver implements bank.BankDriver {
 		}
 
 	}
-
+	*/
+	
 }
+
+
+
+
+
+/*
+
+class AccountGetBalance extends AbstractQueryCommand<Double, bank.server.Account>{
+	public AccountGetBalance(String accountNumber) {
+		setExecutionTarget(new AccountTarget(accountNumber));
+	}
+
+	@Override
+	public void command(bank.server.Account targetObject) throws Exception {
+		System.out.println("Balance is: " + targetObject.getBalance());
+		setResult(targetObject.getBalance());		
+	}
+	
+}
+*/
