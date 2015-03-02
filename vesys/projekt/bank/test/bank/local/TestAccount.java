@@ -1,7 +1,5 @@
 package bank.local;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -11,11 +9,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import bank.local.Driver.*;
-import bank.server.Bank;
 import bank.server.ServerApplication;
-import bank.server.datainterchange.QueryCommandBase;
-import bank.server.datainterchange.QueryResult;
 import bank.server.datainterchange.Repository;
 
 public class TestAccount {

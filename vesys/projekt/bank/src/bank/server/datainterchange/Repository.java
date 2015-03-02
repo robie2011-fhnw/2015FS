@@ -3,15 +3,16 @@ package bank.server.datainterchange;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.net.Socket;
 import java.util.Set;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import bank.Account;
 import bank.Bank;
+import bank.IBankExtended;
 import bank.InactiveException;
 import bank.OverdrawException;
+
+
 
 public class Repository {
 	Socket socket;
@@ -20,36 +21,35 @@ public class Repository {
 	}
 	
 	<TResult, TTarget>
-	QueryCommandBase<TResult, TTarget> 
+	QueryResult<TResult> 
 	runCommandAndReturnQuery(ICommand<TTarget, TResult> command, IExecutionTarget target){
 		QueryCommandBase<TResult, TTarget> query = new QueryCommandBase<TResult, TTarget>();
 		query.setCommand(command);
 		query.setExecutionTarget(target);
-		this.query(query);
-		return query;
+		QueryResult<TResult> result = this.query(query);
+		return result;
 	}
 	
 	<TResult, TTarget>
-	QueryResult<TResult> 
+	TResult 
 	runCommand(ICommand<TTarget, TResult> command, IExecutionTarget target){
-		return runCommandAndReturnQuery(command,target).getResult();
+			return runCommandAndReturnQuery(command,target).getResult();
 	}
 	
 	<TResult, TTarget>
-	QueryResult<TResult> 
+	TResult 
 	runCommandOnBank(ICommand<TTarget, TResult> command){
 		return runCommand(command, new BankTarget());
 	}
 
 	<TResult, TTarget>
-	QueryResult<TResult> 
+	TResult 
 	runCommandOnAccount(ICommand<TTarget, TResult> command, String accountNumber){
 		return runCommand(command, new AccountTarget(accountNumber));
 	}
 	
-	
-		
-	public synchronized void query(QueryCommandBase cmd){
+	public synchronized <TResult, TTarget> 
+	QueryResult<TResult> query(QueryCommandBase<TResult, TTarget> cmd){
 		try {
 			
 			System.out.println("Client write object into socket");
@@ -59,20 +59,19 @@ public class Repository {
 			
 			System.out.println("Client read object from socket");
 			ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-			QueryCommandBase msg = (QueryCommandBase) in.readObject();
-			cmd.overrideQueryResult(msg.getResult().getResult());
-						
+			QueryResult<TResult> result = (QueryResult<TResult>) in.readObject();
+			return result;
 			
 		} catch (IOException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//return null;
+		return null;
 	}
 	
 	public Bank getBank(){
 		return new RemoteBank();
 	}
+
 	
 	
 	class RemoteBank implements bank.Bank{
@@ -81,19 +80,22 @@ public class Repository {
 		public String createAccount(String owner) throws IOException {
 			System.out.println("remote call createAccount");
 			ICommand<Bank, String> command = (bank) -> {return bank.createAccount(owner); };
-			return runCommandOnBank(command).getResult();
+			
+			return runCommandOnBank(command);
 		}
 
 		@Override
 		public boolean closeAccount(String number) throws IOException {
-			throw new NotImplementedException();
+			System.out.println("remote call closeAccount");
+			ICommand<Bank, Boolean> command = (bank) -> {return bank.closeAccount(number); };
+			return runCommandOnBank(command);
 		}
 
 		@Override
 		public Set<String> getAccountNumbers() throws IOException {
 			System.out.println("remote call getAccountNumbers");
 			ICommand<Bank, Set<String>> command = bank -> bank.getAccountNumbers();			
-			return runCommandOnBank(command).getResult();
+			return runCommandOnBank(command);
 		}
 
 		@Override
@@ -101,7 +103,8 @@ public class Repository {
 			System.out.println("remote call getAccount");
 			ICommand<Bank, Account> command = bank -> bank.getAccount(number);
 			
-			Account account = runCommandOnBank(command).getResult();
+			Account account = runCommandOnBank(command);
+			if(account == null) return null;
 			return new RemoteAccount(account);
 		}
 
@@ -112,12 +115,14 @@ public class Repository {
 			System.out.println("remote call transfer");
 
 			// TODO: This could lead to sync. issues
-			ICommand<Bank, Object> command = bank -> { 
-														bank.transfer(getOriginalAccount(a), getOriginalAccount(b), amount); 
+			String numberA = a.getNumber();
+			String numberB = b.getNumber();
+			ICommand<IBankExtended, Object> command = bank -> { 
+														bank.transfer(numberA, numberB, amount); 
 														return null;};
-			QueryCommandBase<Object, Bank>  query = runCommandAndReturnQuery(command, new BankTarget());
+			QueryResult<Object> result = runCommandAndReturnQuery(command, new BankTarget());
 			
-			Exception exception = query.getException();
+			Exception exception = result.getException();
 			if(exception == null){
 				return;
 			}else{
@@ -132,11 +137,7 @@ public class Repository {
 				}
 			}
 		}
-		
-		private Account getOriginalAccount(Account account){
-			return ((RemoteAccount) account).account;
-		}
-							
+									
 	}
 	
 	class RemoteAccount implements bank.Account{
@@ -161,8 +162,7 @@ public class Repository {
 			System.out.println("client/account: remote call isActive()");
 			ICommand<Account, Boolean> command = account -> account.isActive();
 			
-			return runCommandOnAccount(command, this.getNumber())
-					.getResult();
+			return runCommandOnAccount(command, this.getNumber());
 		}
 
 		@Override
@@ -171,9 +171,9 @@ public class Repository {
 			System.out.println("client/account: remote call deposite()");
 
 			ICommand<Account, Object> command = account -> {account.deposit(amount); return null;};
-			QueryCommandBase<Object, Account>  query = runCommandAndReturnQuery(command, new AccountTarget(this.getNumber()));
+			QueryResult<Object> result = runCommandAndReturnQuery(command, new AccountTarget(this.getNumber()));
 			
-			Exception exception = query.getException();
+			Exception exception = result.getException();
 			if(exception == null){
 				return;
 			}else{
@@ -191,9 +191,9 @@ public class Repository {
 		public void withdraw(double amount) throws IOException,
 				IllegalArgumentException, OverdrawException, InactiveException {
 			ICommand<Account, Object> command = account -> {account.withdraw(amount); return null;};			
-			QueryCommandBase<Object, Account>  query = runCommandAndReturnQuery(command, new AccountTarget(this.getNumber()));
+			QueryResult<Object> result = runCommandAndReturnQuery(command, new AccountTarget(this.getNumber()));
 			
-			Exception exception = query.getException();			
+			Exception exception = result.getException();			
 			if(exception == null){
 				return;
 			}else{
@@ -214,10 +214,10 @@ public class Repository {
 			System.out.println("client/account: remote call getBalance()");
 			ICommand<Account, Double> command = account -> account.getBalance();
 			
-			return runCommandOnAccount(command, this.getNumber())
-					.getResult();
+			return runCommandOnAccount(command, this.getNumber());
 		}
 		
 	}
 
+	
 }

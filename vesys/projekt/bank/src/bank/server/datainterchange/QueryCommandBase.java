@@ -44,12 +44,15 @@ public class QueryCommandBase<TResult, TTarget>
 		return executionTarget;
 	}
 	
-	public void execute(TTarget target){
+	public QueryResult<TResult> execute(TTarget target){
+		TResult result = null;
+		Exception exception = null;
 		try{
-			this.setResult(this.command.run(target));
+			result = this.command.run(target);
 		}catch(Exception e){
-			setException(e);
+			exception = e;
 		}
+		return new QueryResult<TResult>(result, exception);
 	}		
 	
 	public void setCommand(ICommand<TTarget, TResult> cmd){

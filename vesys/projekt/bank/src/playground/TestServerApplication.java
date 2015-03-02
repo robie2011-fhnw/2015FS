@@ -1,11 +1,15 @@
 package playground;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import bank.server.datainterchange.QueryCommandBase;
 import bank.server.datainterchange.AccountTarget;
+import bank.server.datainterchange.QueryCommandBase;
 
 public class TestServerApplication {
 

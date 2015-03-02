@@ -1,7 +1,6 @@
 package bank.server;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -11,7 +10,7 @@ import bank.InactiveException;
 import bank.OverdrawException;
 
 
-public class Bank implements bank.Bank, Serializable {
+public class Bank implements bank.IBankExtended {
 	private int lastAccountId = 0;
 	
 	private final Map<String, Account> accounts = new HashMap<>();
@@ -78,14 +77,5 @@ public class Bank implements bank.Bank, Serializable {
 		to.deposit(amount);
 	}
 
-	private void createDummyAccounts(){		
-		try {
-			getAccount(createAccount("Muster")).deposit(2492);
-			getAccount(createAccount("Oeter")).deposit(9372);
-		} catch (IllegalArgumentException | IOException | InactiveException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 }
 

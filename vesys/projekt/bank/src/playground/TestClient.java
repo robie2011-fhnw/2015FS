@@ -1,13 +1,10 @@
 package playground;
 
-import java.io.*;
-import java.net.*;
-import java.util.LinkedList;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.Queue;
-
-import bank.Account;
-import bank.server.datainterchange.QueryCommandBase;
-import bank.server.datainterchange.AccountTarget;
 
 
 public class TestClient {

@@ -1,18 +1,15 @@
 package bank.server.datainterchange;
 
-public class QueryResult<T>{
-	T result;
+import java.io.Serializable;
+
+public class QueryResult<T> implements Serializable{
+	T data;
 	Exception exception;
-	
-	public QueryResult(T result, Exception e){
-		this.result = result;
+	public QueryResult(T data, Exception e){
+		this.data = data;
+		this.exception = e;
 	}
 	
-	public QueryResult(T result){
-		this(result, null);
-	}
-	
-	public T getResult(){
-		return result;
-	}
+	public T getResult(){ return data; }
+	public Exception getException() { return exception; }
 }
