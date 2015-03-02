@@ -1,4 +1,4 @@
-package bank.server.datainterchange;
+package bank.local;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -11,6 +11,12 @@ import bank.Bank;
 import bank.IBankExtended;
 import bank.InactiveException;
 import bank.OverdrawException;
+import bank.server.datainterchange.AccountTarget;
+import bank.server.datainterchange.BankTarget;
+import bank.server.datainterchange.ICommand;
+import bank.server.datainterchange.IExecutionTarget;
+import bank.server.datainterchange.QueryCommandBase;
+import bank.server.datainterchange.QueryResult;
 
 
 

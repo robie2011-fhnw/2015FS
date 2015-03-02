@@ -17,6 +17,7 @@ public class ServerApplication {
 	
 
 	public static void main(String[] args) {
+		System.out.println("STARTING SERVER APPLICATION");
 		
 		Bank bank = new Bank();
 		

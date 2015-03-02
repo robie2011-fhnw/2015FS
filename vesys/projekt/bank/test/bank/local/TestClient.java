@@ -11,7 +11,6 @@ import org.junit.Test;
 
 import bank.Bank;
 import bank.InactiveException;
-import bank.server.datainterchange.Repository;
 
 public class TestClient {
 	Socket socket;
